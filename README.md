@@ -145,3 +145,4 @@ scripts/n8n-workflow/
 | `process is not defined` | Code 노드에서 process.env 사용 | 환경변수는 .env → build 방식으로 주입 |
 | npm registry 오류        | 내부 nexus를 바라봄            | start.sh의 `--registry` 옵션으로 해결 |
 | 재시작 시 계정 초기화    | .n8n 폴더 삭제됨               | .n8n 폴더를 삭제하지 말 것            |
+
