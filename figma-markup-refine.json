@@ -1,0 +1,100 @@
+{
+  "id": "3",
+  "name": "마크업 고도화 → MR 생성",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "markup-refine",
+        "options": {
+          "responseMode": "onReceived",
+          "responseData": "allEntries"
+        }
+      },
+      "id": "wh-gitlab",
+      "name": "GitLab Push Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "markup-refine"
+    },
+    {
+      "parameters": {
+        "jsCode": "__FILTER_GITLAB_PUSH_CODE__"
+      },
+      "id": "filter-branch",
+      "name": "브랜치 필터",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-refine",
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "refine",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "should-refine",
+      "name": "고도화 필요?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [740, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "__SIMULATE_CLAUDE_REFINE_CODE__"
+      },
+      "id": "claude-refine",
+      "name": "Claude 고도화 (시뮬레이션)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 200],
+      "notes": "현재는 시뮬레이션. 실제 Claude CLI 에이전트 준비 시 교체."
+    },
+    {
+      "parameters": {
+        "jsCode": "__GIT_REFINE_AND_MR_CODE__"
+      },
+      "id": "git-refine-mr",
+      "name": "고도화 커밋 + MR 생성",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1260, 200],
+      "notes": "git commit + push + MR 생성 (push -o 옵션)"
+    }
+  ],
+  "connections": {
+    "GitLab Push Webhook": {
+      "main": [[{ "node": "브랜치 필터", "type": "main", "index": 0 }]]
+    },
+    "브랜치 필터": {
+      "main": [[{ "node": "고도화 필요?", "type": "main", "index": 0 }]]
+    },
+    "고도화 필요?": {
+      "main": [[{ "node": "Claude 고도화 (시뮬레이션)", "type": "main", "index": 0 }], []]
+    },
+    "Claude 고도화 (시뮬레이션)": {
+      "main": [[{ "node": "고도화 커밋 + MR 생성", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [{ "name": "gitlab" }, { "name": "markup" }, { "name": "claude" }]
+}

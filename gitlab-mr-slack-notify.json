@@ -1,0 +1,247 @@
+{
+  "id": "1",
+  "name": "GitLab MR → Slack 알림",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gitlab-mr-webhook",
+        "options": {
+          "responseMode": "onReceived",
+          "responseData": "allEntries"
+        }
+      },
+      "id": "webhook-trigger",
+      "name": "GitLab Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "gitlab-mr-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "__PREPARE_MESSAGE_CODE__"
+      },
+      "id": "prepare-message",
+      "name": "메시지 준비",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "new_thread",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": "새 스레드"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "reply",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": "스레드 답글"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "switch-action",
+      "name": "분기",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [740, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer SLACK_BOT_TOKEN_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channel: $json.channel, text: $json.fallback, blocks: [{ type: 'section', text: { type: 'mrkdwn', text: $json.message } }] }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "send-main",
+      "name": "메인 전송",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "__SAVE_THREAD_TS_CODE__"
+      },
+      "id": "save-ts",
+      "name": "ts 저장",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1240, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-has-desc",
+              "leftValue": "={{ $json.description }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "check-description",
+      "name": "Description 확인",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [1460, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer SLACK_BOT_TOKEN_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channel: $json.channel, thread_ts: $json.threadTs, text: $json.description }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "send-description",
+      "name": "Description 스레드",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1680, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer SLACK_BOT_TOKEN_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channel: $json.channel, thread_ts: $json.threadTs, text: $json.message }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "send-reply",
+      "name": "스레드 답글",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 420]
+    }
+  ],
+  "connections": {
+    "GitLab Webhook": {
+      "main": [
+        [{ "node": "메시지 준비", "type": "main", "index": 0 }]
+      ]
+    },
+    "메시지 준비": {
+      "main": [
+        [{ "node": "분기", "type": "main", "index": 0 }]
+      ]
+    },
+    "분기": {
+      "main": [
+        [{ "node": "메인 전송", "type": "main", "index": 0 }],
+        [{ "node": "스레드 답글", "type": "main", "index": 0 }]
+      ]
+    },
+    "메인 전송": {
+      "main": [
+        [{ "node": "ts 저장", "type": "main", "index": 0 }]
+      ]
+    },
+    "ts 저장": {
+      "main": [
+        [{ "node": "Description 확인", "type": "main", "index": 0 }]
+      ]
+    },
+    "Description 확인": {
+      "main": [
+        [{ "node": "Description 스레드", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    { "name": "gitlab" },
+    { "name": "slack" },
+    { "name": "notification" }
+  ]
+}

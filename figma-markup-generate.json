@@ -1,0 +1,249 @@
+{
+  "id": "2",
+  "name": "Figma 마크업 생성 → GitLab 푸시",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "markup-generate",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "wh-slack",
+      "name": "Slack Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "markup-generate"
+    },
+    {
+      "parameters": {},
+      "id": "trigger-manual",
+      "name": "수동 실행",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "__PARSE_SLACK_COMMAND_CODE__"
+      },
+      "id": "parse-cmd",
+      "name": "명령 파싱",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ response_type: 'ephemeral', text: '\\u200b' }) }}",
+        "options": {}
+      },
+      "id": "slack-ack",
+      "name": "Slack Ack",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [760, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "__SLACK_THREAD_START_CODE__"
+      },
+      "id": "thread-start",
+      "name": "쓰레드 시작",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 300],
+      "notes": "Ack 메시지의 ts를 찾아 threadTs로 캡처"
+    },
+    {
+      "parameters": {
+        "jsCode": "__CHECK_CANCEL_CODE__"
+      },
+      "id": "check-cancel",
+      "name": "취소 확인",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "check-cancelled",
+              "leftValue": "={{ $json.cancelled }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "notEquals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-not-cancelled",
+      "name": "취소됨?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "__RUN_KOMBAI_CODE__"
+      },
+      "id": "run-kombai",
+      "name": "Kombai 실행",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1600, 200],
+      "notes": "Kombai runner를 실행하여 Figma → React 코드 생성."
+    },
+    {
+      "parameters": {
+        "jsCode": "__WAIT_KOMBAI_DONE_CODE__"
+      },
+      "id": "collect-output",
+      "name": "출력 파일 수집",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1860, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "check-success",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "check-success",
+      "name": "성공 여부",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2120, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "__GIT_PUSH_MARKUP_CODE__"
+      },
+      "id": "git-push",
+      "name": "Git 브랜치 + 커밋 + 푸시",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2380, 100],
+      "notes": "git CLI로 브랜치 생성 → 파일 복사 → 커밋 → 푸시"
+    },
+    {
+      "parameters": {
+        "jsCode": "__NOTIFY_FAILURE_CODE__"
+      },
+      "id": "notify-fail",
+      "name": "실패 알림",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2380, 300],
+      "notes": "실패 시 Slack 쓰레드에 에러 알림"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "markup-cancel",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "wh-cancel",
+      "name": "Cancel Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 700],
+      "webhookId": "markup-cancel"
+    },
+    {
+      "parameters": {
+        "jsCode": "__HANDLE_CANCEL_CODE__"
+      },
+      "id": "handle-cancel",
+      "name": "취소 처리",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 700]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ response_type: 'ephemeral', text: $json.message }) }}",
+        "options": {}
+      },
+      "id": "cancel-response",
+      "name": "취소 응답",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [760, 700]
+    }
+  ],
+  "connections": {
+    "Slack Webhook": {
+      "main": [[{ "node": "명령 파싱", "type": "main", "index": 0 }]]
+    },
+    "명령 파싱": {
+      "main": [[{ "node": "Slack Ack", "type": "main", "index": 0 }]]
+    },
+    "Slack Ack": {
+      "main": [[{ "node": "쓰레드 시작", "type": "main", "index": 0 }]]
+    },
+    "쓰레드 시작": {
+      "main": [[{ "node": "취소 확인", "type": "main", "index": 0 }]]
+    },
+    "수동 실행": {
+      "main": [[{ "node": "명령 파싱", "type": "main", "index": 0 }]]
+    },
+    "취소 확인": {
+      "main": [[{ "node": "취소됨?", "type": "main", "index": 0 }]]
+    },
+    "취소됨?": {
+      "main": [[{ "node": "Kombai 실행", "type": "main", "index": 0 }], []]
+    },
+    "Kombai 실행": {
+      "main": [[{ "node": "출력 파일 수집", "type": "main", "index": 0 }]]
+    },
+    "출력 파일 수집": {
+      "main": [[{ "node": "성공 여부", "type": "main", "index": 0 }]]
+    },
+    "성공 여부": {
+      "main": [
+        [{ "node": "Git 브랜치 + 커밋 + 푸시", "type": "main", "index": 0 }],
+        [{ "node": "실패 알림", "type": "main", "index": 0 }]
+      ]
+    },
+    "Cancel Webhook": {
+      "main": [[{ "node": "취소 처리", "type": "main", "index": 0 }]]
+    },
+    "취소 처리": {
+      "main": [[{ "node": "취소 응답", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [{ "name": "figma" }, { "name": "markup" }, { "name": "kombai" }],
+  "pinData": {
+    "수동 실행": [
+      {
+        "json": {
+          "body": {
+            "figmaUrl": "https://www.figma.com/design/yuPeMLl9JmVvLgL4yqzBRS/IT-비용관리?node-id=5227-66131",
+            "prompt": "프레임을 기존 페이지 작성 레퍼런스 참조해서 ./src/pages/Report/RawData/Index.page.tsx 에 마크업 부탁해"
+          }
+        }
+      }
+    ]
+  }
+}
