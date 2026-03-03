@@ -6,13 +6,17 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "github-deploy",
+        "responseMode": "lastNode",
         "options": {}
       },
       "id": "github-webhook",
       "name": "GitHub Push Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [260, 300],
+      "position": [
+        260,
+        300
+      ],
       "webhookId": "github-deploy"
     },
     {
@@ -23,7 +27,10 @@
       "name": "Pull & Deploy",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [480, 300]
+      "position": [
+        480,
+        300
+      ]
     }
   ],
   "connections": {
