@@ -42,6 +42,8 @@ const codeFiles = {
   __FILTER_GITLAB_PUSH_CODE__: fs.readFileSync(path.join(nodesDir, 'filter-gitlab-push.js'), 'utf8'),
   __SIMULATE_CLAUDE_REFINE_CODE__: fs.readFileSync(path.join(nodesDir, 'simulate-claude-refine.js'), 'utf8'),
   __GIT_REFINE_AND_MR_CODE__: fs.readFileSync(path.join(nodesDir, 'git-refine-and-mr.js'), 'utf8'),
+  // GitHub 자동 배포
+  __GITHUB_DEPLOY_CODE__: fs.readFileSync(path.join(nodesDir, 'github-deploy.js'), 'utf8'),
 }
 
 // ─── MR Description 생성 ───────────────────────────────────────────
@@ -99,5 +101,8 @@ buildWorkflow('figma-markup-generate.json', 'markup-generate-resolved.json')
 
 // 3. 마크업 고도화 → MR 생성
 buildWorkflow('figma-markup-refine.json', 'markup-refine-resolved.json')
+
+// 4. GitHub 자동 배포
+buildWorkflow('github-deploy.json', 'deploy-resolved.json')
 
 console.log('\n워크플로우 빌드 완료!')
