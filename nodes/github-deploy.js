@@ -33,18 +33,16 @@ try {
   )
 
   if (needsRestart) {
-    // self restart: 백그라운드에서 restart 스크립트 실행
-    execSync(
-      'nohup bash -c "sleep 2 && kill $(lsof -ti :5678) && sleep 3 && bash start.sh" > .n8n/restart.log 2>&1 &',
-      opts
-    )
+    // self restart: 백그라운드에서 restart 실행
+    const restartScript = path.join(SCRIPT_DIR, 'auto-deploy.sh')
+    execSync(`nohup bash "${restartScript}" > .n8n/restart.log 2>&1 &`, opts)
     return [{
       json: {
         action: 'restart',
         pusher,
         commits: commitMessages,
         changedFiles,
-        message: 'n8n restart 예약됨 (2초 후)',
+        message: 'n8n restart 예약됨 (auto-deploy.sh)',
       },
     }]
   }
