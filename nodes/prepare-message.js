@@ -36,16 +36,16 @@ function getUpdateDetails(body) {
     details.push(`대상 브랜치: \`${changes.target_branch.previous}\` → \`${changes.target_branch.current}\``)
   }
   if (changes.labels) {
-    const prev = (changes.labels.previous || []).map(l => l.title).join(', ') || '없음'
-    const curr = (changes.labels.current || []).map(l => l.title).join(', ') || '없음'
+    const prev = (changes.labels.previous || []).map((l) => l.title).join(', ') || '없음'
+    const curr = (changes.labels.current || []).map((l) => l.title).join(', ') || '없음'
     details.push(`레이블: ${prev} → ${curr}`)
   }
   if (changes.assignees) {
-    const curr = (changes.assignees.current || []).map(a => a.name).join(', ') || '없음'
+    const curr = (changes.assignees.current || []).map((a) => a.name).join(', ') || '없음'
     details.push(`담당자: ${curr}`)
   }
   if (changes.reviewers) {
-    const curr = (changes.reviewers.current || []).map(r => r.name).join(', ') || '없음'
+    const curr = (changes.reviewers.current || []).map((r) => r.name).join(', ') || '없음'
     details.push(`리뷰어: ${curr}`)
   }
   if (changes.milestone_id) {
@@ -72,7 +72,7 @@ if (objectKind === 'merge_request') {
   const mrKey = `mr_${attrs.iid}`
 
   if (action === 'open') {
-    const labels = (attrs.labels || []).map(l => l.title).join(', ')
+    const labels = (attrs.labels || []).map((l) => l.title).join(', ')
     const lines = [
       `${TEAM_MENTION} ${attrs.title} <${attrs.url}|MR>입니다.`,
       '',
@@ -114,8 +114,22 @@ if (objectKind === 'merge_request') {
     ]
   }
 
+  if (action === 'merge') {
+    return [
+      {
+        json: {
+          action: 'merge',
+          channel: CHANNEL,
+          message: `✅ MR 머지 완료\nby ${user.name}`,
+          threadTs,
+          mrKey,
+          fallback: `✅ MR 머지 완료 by ${user.name}`,
+        },
+      },
+    ]
+  }
+
   const actionLabels = {
-    merge: '✅ MR 머지 완료',
     close: '🚫 MR 닫힘',
     reopen: '♻️ MR 재오픈',
     approved: '👍 MR 승인',

@@ -73,6 +73,27 @@
                 "combinator": "and"
               },
               "renameOutput": "스레드 답글"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "merge",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": "머지"
             }
           ]
         },
@@ -201,47 +222,89 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [1000, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer SLACK_BOT_TOKEN_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channel: $json.channel, thread_ts: $json.threadTs, text: $json.message }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "send-merge-reply",
+      "name": "머지 답글",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 620]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/reactions.add",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer SLACK_BOT_TOKEN_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channel: $('\uba54\uc2dc\uc9c0 \uc900\ube44').first().json.channel, name: 'merge', timestamp: $('\uba54\uc2dc\uc9c0 \uc900\ube44').first().json.threadTs }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "add-merge-reaction",
+      "name": "머지 이모지",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1240, 620]
     }
   ],
   "connections": {
     "GitLab Webhook": {
-      "main": [
-        [{ "node": "메시지 준비", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "메시지 준비", "type": "main", "index": 0 }]]
     },
     "메시지 준비": {
-      "main": [
-        [{ "node": "분기", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "분기", "type": "main", "index": 0 }]]
     },
     "분기": {
       "main": [
         [{ "node": "메인 전송", "type": "main", "index": 0 }],
-        [{ "node": "스레드 답글", "type": "main", "index": 0 }]
+        [{ "node": "스레드 답글", "type": "main", "index": 0 }],
+        [{ "node": "머지 답글", "type": "main", "index": 0 }]
       ]
     },
     "메인 전송": {
-      "main": [
-        [{ "node": "ts 저장", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "ts 저장", "type": "main", "index": 0 }]]
     },
     "ts 저장": {
-      "main": [
-        [{ "node": "Description 확인", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "Description 확인", "type": "main", "index": 0 }]]
     },
     "Description 확인": {
-      "main": [
-        [{ "node": "Description 스레드", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "Description 스레드", "type": "main", "index": 0 }]]
+    },
+    "머지 답글": {
+      "main": [[{ "node": "머지 이모지", "type": "main", "index": 0 }]]
     }
   },
   "settings": {
     "executionOrder": "v1"
   },
-  "tags": [
-    { "name": "gitlab" },
-    { "name": "slack" },
-    { "name": "notification" }
-  ]
+  "tags": [{ "name": "gitlab" }, { "name": "slack" }, { "name": "notification" }]
 }
