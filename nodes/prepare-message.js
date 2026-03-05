@@ -1,8 +1,14 @@
 const body = $input.first().json.body
 const staticData = $getWorkflowStaticData('global')
 const objectKind = body.object_kind
-const CHANNEL = 'SLACK_CHANNEL_HERE'
+const CHANNEL_DEFAULT = 'SLACK_CHANNEL_HERE'
+const CHANNEL_SHIP = 'SLACK_CHANNEL_SHIP_HERE'
 const TEAM_MENTION = 'SLACK_TEAM_MENTION_HERE'
+
+function getChannel(labels) {
+  const names = (labels || []).map((l) => (typeof l === 'string' ? l : l.title).toLowerCase())
+  return names.includes('ship') ? CHANNEL_SHIP : CHANNEL_DEFAULT
+}
 
 function mdToMrkdwn(md) {
   if (!md) return ''
@@ -72,20 +78,22 @@ if (objectKind === 'merge_request') {
   const mrKey = `mr_${attrs.iid}`
 
   if (action === 'open') {
-    const labels = (attrs.labels || []).map((l) => l.title).join(', ')
+    const mrLabels = attrs.labels || []
+    const labelText = mrLabels.map((l) => l.title).join(', ')
+    const channel = getChannel(mrLabels)
     const lines = [
       `${TEAM_MENTION} ${attrs.title} <${attrs.url}|MR>입니다.`,
       '',
       `• *작성자:* ${user.name} (@${user.username})`,
       `• *브랜치:* \`${attrs.source_branch}\` → \`${attrs.target_branch}\``,
     ]
-    if (labels) lines.push(`• *라벨:* \`${labels}\``)
+    if (labelText) lines.push(`• *라벨:* \`${labelText}\``)
 
     return [
       {
         json: {
           action: 'new_thread',
-          channel: CHANNEL,
+          channel,
           message: lines.join('\n'),
           description: mdToMrkdwn(attrs.description),
           mrKey,
@@ -96,6 +104,7 @@ if (objectKind === 'merge_request') {
   }
 
   const threadTs = staticData[mrKey]
+  const savedChannel = staticData[`${mrKey}_channel`] || CHANNEL_DEFAULT
   if (!threadTs) return [{ json: { action: 'ignore' } }]
 
   if (action === 'update') {
@@ -104,7 +113,7 @@ if (objectKind === 'merge_request') {
       {
         json: {
           action: 'reply',
-          channel: CHANNEL,
+          channel: savedChannel,
           message: `🔄 MR 업데이트\n${details.join('\n')}\nby ${user.name}`,
           threadTs,
           mrKey,
@@ -119,7 +128,7 @@ if (objectKind === 'merge_request') {
       {
         json: {
           action: 'merge',
-          channel: CHANNEL,
+          channel: savedChannel,
           message: `✅ MR 머지 완료\nby ${user.name}`,
           threadTs,
           mrKey,
@@ -143,7 +152,7 @@ if (objectKind === 'merge_request') {
     {
       json: {
         action: 'reply',
-        channel: CHANNEL,
+        channel: savedChannel,
         message: `${header}\nby ${user.name}`,
         threadTs,
         mrKey,
@@ -175,11 +184,12 @@ if (objectKind === 'pipeline') {
   const duration = pipeline.duration ? ` (${Math.round(pipeline.duration / 60)}분)` : ''
   const pipelineUrl = `${body.project.web_url}/-/pipelines/${pipeline.id}`
 
+  const savedChannel = staticData[`${mrKey}_channel`] || CHANNEL_DEFAULT
   return [
     {
       json: {
         action: 'reply',
-        channel: CHANNEL,
+        channel: savedChannel,
         message: `${status}${duration}\n\`${pipeline.ref}\` • <${pipelineUrl}|#${pipeline.id}>`,
         threadTs,
         mrKey,
@@ -203,11 +213,12 @@ if (objectKind === 'note') {
   const comment = mdToMrkdwn(note.note)
   const preview = comment.length > 200 ? comment.substring(0, 200) + '...' : comment
 
+  const savedChannel = staticData[`${mrKey}_channel`] || CHANNEL_DEFAULT
   return [
     {
       json: {
         action: 'reply',
-        channel: CHANNEL,
+        channel: savedChannel,
         message: `💬 *${user.name}* <${note.url}|코멘트>\n${preview}`,
         threadTs,
         mrKey,

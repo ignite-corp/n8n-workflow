@@ -4,6 +4,7 @@ const response = $input.first().json
 
 if (response.ok && response.ts) {
   staticData[prevData.mrKey] = response.ts
+  staticData[`${prevData.mrKey}_channel`] = prevData.channel
 }
 
 return [

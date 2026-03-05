@@ -10,6 +10,7 @@ const nodesDir = path.join(dir, 'nodes')
 const env = {
   SLACK_BOT_TOKEN: process.env.SLACK_BOT_TOKEN,
   SLACK_CHANNEL: process.env.SLACK_CHANNEL || 'fe3-dm',
+  SLACK_CHANNEL_SHIP: process.env.SLACK_CHANNEL_SHIP || process.env.SLACK_CHANNEL || 'fe3-dm',
   SLACK_TEAM_MENTION: process.env.SLACK_TEAM_MENTION || '@fe3',
   PROJECT_ROOT: path.resolve(dir, process.env.PROJECT_ROOT || '../..'),
   GITLAB_TARGET_BRANCH: process.env.GITLAB_TARGET_BRANCH || 'develop',
@@ -77,6 +78,7 @@ function buildWorkflow(templateFile, outputFile, extraReplacements = {}) {
   let json = JSON.stringify(template, null, 2)
   json = json.replace(/SLACK_BOT_TOKEN_HERE/g, env.SLACK_BOT_TOKEN)
   json = json.replace(/SLACK_CHANNEL_HERE/g, env.SLACK_CHANNEL)
+  json = json.replace(/SLACK_CHANNEL_SHIP_HERE/g, env.SLACK_CHANNEL_SHIP)
   json = json.replace(/SLACK_TEAM_MENTION_HERE/g, env.SLACK_TEAM_MENTION)
   json = json.replace(/KOMBAI_POC_DIR_HERE/g, env.KOMBAI_POC_DIR)
   json = json.replace(/PROJECT_ROOT_HERE/g, env.PROJECT_ROOT)
