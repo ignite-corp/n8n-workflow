@@ -7,7 +7,7 @@ const TEAM_MENTION = 'SLACK_TEAM_MENTION_HERE'
 
 function getChannel(labels) {
   const names = (labels || []).map((l) => (typeof l === 'string' ? l : l.title).toLowerCase())
-  return names.includes('ship') ? CHANNEL_SHIP : CHANNEL_DEFAULT
+  return names.some((n) => ['ask', 'show'].includes(n)) ? CHANNEL_DEFAULT : CHANNEL_SHIP
 }
 
 function mdToMrkdwn(md) {
