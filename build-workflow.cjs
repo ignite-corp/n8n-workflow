@@ -14,6 +14,14 @@ const env = {
   SLACK_TEAM_MENTION: process.env.SLACK_TEAM_MENTION || '@fe3',
   PROJECT_ROOT: path.resolve(dir, process.env.PROJECT_ROOT || '../..'),
   GITLAB_TARGET_BRANCH: process.env.GITLAB_TARGET_BRANCH || 'develop',
+  // AI 이미지 생성
+  COMFYUI_HOST: process.env.COMFYUI_HOST || '192.168.219.176',
+  COMFYUI_PORT: process.env.COMFYUI_PORT || '8188',
+  AI_IMAGES_DIR: process.env.AI_IMAGES_DIR || '~/ai-images',
+  AI_IMAGE_BASE_URL: process.env.AI_IMAGE_BASE_URL || process.env.WEBHOOK_URL || 'http://localhost:5678',
+  // WoL
+  WOL_MAC_ADDRESS: process.env.WOL_MAC_ADDRESS || '',
+  WOL_BROADCAST: process.env.WOL_BROADCAST || '255.255.255.255',
 }
 
 // KOMBAI_POC_DIR은 PROJECT_ROOT 기준 상대경로
@@ -45,6 +53,11 @@ const codeFiles = {
   __GIT_REFINE_AND_MR_CODE__: fs.readFileSync(path.join(nodesDir, 'git-refine-and-mr.js'), 'utf8'),
   // GitHub 자동 배포
   __GITHUB_DEPLOY_CODE__: fs.readFileSync(path.join(nodesDir, 'github-deploy.js'), 'utf8'),
+  // AI 이미지 생성
+  __AI_IMAGE_BUILD_PROMPT_CODE__: fs.readFileSync(path.join(nodesDir, 'ai-image-build-prompt.js'), 'utf8'),
+  __AI_IMAGE_POLL_CODE__: fs.readFileSync(path.join(nodesDir, 'ai-image-poll.js'), 'utf8'),
+  __AI_IMAGE_SERVE_CODE__: fs.readFileSync(path.join(nodesDir, 'ai-image-serve.js'), 'utf8'),
+  __AI_IMAGE_WOL_HEALTH_CODE__: fs.readFileSync(path.join(nodesDir, 'ai-image-wol-health.js'), 'utf8'),
 }
 
 // ─── MR Description 생성 ───────────────────────────────────────────
@@ -83,6 +96,14 @@ function buildWorkflow(templateFile, outputFile, extraReplacements = {}) {
   json = json.replace(/KOMBAI_POC_DIR_HERE/g, env.KOMBAI_POC_DIR)
   json = json.replace(/PROJECT_ROOT_HERE/g, env.PROJECT_ROOT)
   json = json.replace(/GITLAB_TARGET_BRANCH_HERE/g, env.GITLAB_TARGET_BRANCH)
+  // AI 이미지 생성
+  json = json.replace(/COMFYUI_HOST_HERE/g, env.COMFYUI_HOST)
+  json = json.replace(/COMFYUI_PORT_HERE/g, env.COMFYUI_PORT)
+  json = json.replace(/AI_IMAGES_DIR_HERE/g, env.AI_IMAGES_DIR)
+  json = json.replace(/AI_IMAGE_BASE_URL_HERE/g, env.AI_IMAGE_BASE_URL.replace(/\/$/, ''))
+  // WoL
+  json = json.replace(/WOL_MAC_ADDRESS_HERE/g, env.WOL_MAC_ADDRESS)
+  json = json.replace(/WOL_BROADCAST_HERE/g, env.WOL_BROADCAST)
 
   fs.mkdirSync(outDir, { recursive: true })
   const outFile = path.join(outDir, outputFile)
@@ -106,5 +127,8 @@ buildWorkflow('figma-markup-refine.json', 'markup-refine-resolved.json')
 
 // 4. GitHub 자동 배포
 buildWorkflow('github-deploy.json', 'deploy-resolved.json')
+
+// 5. AI 이미지 생성
+buildWorkflow('ai-image-gen.json', 'ai-image-resolved.json')
 
 console.log('\n워크플로우 빌드 완료!')

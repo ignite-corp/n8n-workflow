@@ -115,7 +115,7 @@ echo "워크플로우 import 완료!"
 # ─── 3단계: 활성화할 워크플로우 active=true 설정 ───────────────────────
 echo ""
 echo "워크플로우 활성화 설정 중... (Slack 알림 + Deploy)"
-for WF_NAME in "workflow-resolved.json" "deploy-resolved.json"; do
+for WF_NAME in "workflow-resolved.json" "deploy-resolved.json" "ai-image-resolved.json"; do
   WF_FILE="$N8N_DATA/$WF_NAME"
   if [ -f "$WF_FILE" ]; then
     WF_ID=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$WF_FILE','utf8')).id)")
@@ -134,6 +134,8 @@ echo "  GitLab MR 알림:    http://localhost:$N8N_PORT/webhook/gitlab-mr-webhoo
 echo "  마크업 생성:       http://localhost:$N8N_PORT/webhook/markup-generate"
 echo "  마크업 고도화:     http://localhost:$N8N_PORT/webhook/markup-refine"
 echo "  GitHub 배포:       http://localhost:$N8N_PORT/webhook/github-deploy"
+echo "  AI 이미지 생성:   http://localhost:$N8N_PORT/webhook/ai-image-generate"
+echo "  AI 이미지 서빙:   http://localhost:$N8N_PORT/ai-images/:filename"
 echo ""
 
 $N8N start

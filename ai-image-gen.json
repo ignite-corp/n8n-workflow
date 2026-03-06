@@ -1,0 +1,187 @@
+{
+    "id": "5",
+    "name": "AI 이미지 생성",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "ai-image-generate",
+                "options": {
+                    "responseMode": "onReceived",
+                    "responseCode": 202,
+                    "responseData": "={ {\"status\":\"queued\",\"message\":\"이미지 생성이 시작되었습니다. callback_url로 결과가 전달됩니다.\"} }"
+                }
+            },
+            "id": "ai-image-webhook",
+            "name": "AI Image Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                200,
+                300
+            ],
+            "webhookId": "ai-image-generate"
+        },
+        {
+            "parameters": {
+                "jsCode": "__AI_IMAGE_BUILD_PROMPT_CODE__"
+            },
+            "id": "ai-image-build-prompt",
+            "name": "프리셋 변환",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                440,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "__AI_IMAGE_WOL_HEALTH_CODE__"
+            },
+            "id": "wol-health",
+            "name": "WoL + 헬스체크",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $('프리셋 변환').first().json.comfyBase + '/prompt' }}",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ prompt: $('프리셋 변환').first().json.comfyPrompt }) }}",
+                "options": {
+                    "timeout": 10000
+                }
+            },
+            "id": "comfyui-queue",
+            "name": "ComfyUI 큐잉",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1120,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "__AI_IMAGE_POLL_CODE__"
+            },
+            "id": "ai-image-poll",
+            "name": "폴링 & 이미지 저장",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1360,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "httpMethod": "GET",
+                "path": "ai-image/:filename",
+                "options": {
+                    "responseMode": "lastNode"
+                }
+            },
+            "id": "image-serve-webhook",
+            "name": "이미지 서빙 Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                200,
+                600
+            ],
+            "webhookId": "ai-image"
+        },
+        {
+            "parameters": {
+                "jsCode": "__AI_IMAGE_SERVE_CODE__"
+            },
+            "id": "serve-image",
+            "name": "이미지 응답",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                440,
+                600
+            ]
+        }
+    ],
+    "connections": {
+        "AI Image Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "프리셋 변환",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "프리셋 변환": {
+            "main": [
+                [
+                    {
+                        "node": "WoL + 헬스체크",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "WoL + 헬스체크": {
+            "main": [
+                [
+                    {
+                        "node": "ComfyUI 큐잉",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "ComfyUI 큐잉": {
+            "main": [
+                [
+                    {
+                        "node": "폴링 & 이미지 저장",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "이미지 서빙 Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "이미지 응답",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "tags": [
+        {
+            "name": "ai-image"
+        },
+        {
+            "name": "comfyui"
+        },
+        {
+            "name": "image"
+        }
+    ]
+}
