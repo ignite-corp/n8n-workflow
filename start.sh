@@ -35,7 +35,7 @@ N8N="npx --registry=$NPM_REGISTRY n8n@$N8N_VERSION"
 # n8n-nodes-base 캐시 초기화 (corruption 방지)
 if [ -d "$N8N_DATA/.n8n/nodes" ]; then
   echo "노드 캐시 초기화 중..."
-  rm -rf "$N8N_DATA/.n8n/nodes"
+  rm -rf "$N8N_DATA/.n8n/nodes" || true
 fi
 
 echo "워크플로우 빌드 중..."

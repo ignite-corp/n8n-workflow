@@ -1,8 +1,9 @@
 // AI 이미지 — 프리셋 → ComfyUI API 워크플로우 JSON 변환
-// 입력: $input.first().json (webhook body 직접 매핑)
+// 입력: $input.first().json.body (webhook v2는 body 프로퍼티에 POST data 전달)
 // 출력: { comfyPrompt, prompt_text, preset, seed, callback_url, comfyHost }
 
-const input = $input.first().json;
+const raw = $input.first().json;
+const input = raw.body || raw;
 const prompt = input.prompt || '';
 const preset = input.preset || 'retro_hisat';
 const seed = input.seed != null ? Number(input.seed) : Math.floor(Math.random() * 2147483647);
