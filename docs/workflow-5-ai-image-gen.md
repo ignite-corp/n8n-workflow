@@ -27,9 +27,38 @@ GET /ai-images/:filename
   "prompt": "이미지 생성 프롬프트 텍스트",
   "preset": "retro_hisat",
   "seed": 42,
-  "callback_url": "(선택) 완료 후 콜백 URL"
+  "callback_url": "(선택) 완료 후 콜백 URL",
+  "target_image": "(선택) 참조 이미지 URL — IPAdapter로 스타일/분위기 반영",
+  "ip_weight": 0.7,
+  "custom_config": "(선택) 프리셋 대신 직접 설정 — 아래 참고"
 }
 ```
+
+> - `target_image`가 없으면 기존 txt2img와 동일. `ip_weight`는 참조 강도 (0~1, 기본 0.7)
+> - `custom_config`가 있으면 `preset`을 무시하고 직접 설정 사용
+
+### custom_config 형식
+
+프리셋 없이 체크포인트/LoRA/설정을 직접 지정:
+
+```json
+{
+  "prompt": "dark fantasy castle",
+  "custom_config": {
+    "checkpoint": "flux1-dev-fp8.safetensors",
+    "loras": [
+      { "name": "my_lora.safetensors", "strength": 0.8 }
+    ],
+    "width": 960, "height": 1280,
+    "cfg": 3.5, "steps": 25,
+    "sampler": "euler", "scheduler": "sgm_uniform",
+    "negative": "",
+    "isFlux": true
+  }
+}
+```
+
+> 생략된 필드는 Flux 기본값 적용 (960×1280, cfg 3.5, 25 steps, euler)
 
 ## 프리셋
 
@@ -64,6 +93,11 @@ GET /ai-images/:filename
 curl --max-time 180 -X POST https://n8n.firejune.io/webhook/ai-image-generate \
   -H 'Content-Type: application/json' \
   -d '{"prompt":"a cute anime girl in a cozy cafe, warm lighting","preset":"retro_hisat"}'
+
+# 참조 이미지 사용 (IPAdapter — 분위기/스타일 반영)
+curl --max-time 180 -X POST https://n8n.firejune.io/webhook/ai-image-generate \
+  -H 'Content-Type: application/json' \
+  -d '{"prompt":"anime portrait in warm tones","preset":"retro_hisat","target_image":"https://n8n.firejune.io/ai-images/기존이미지.png","ip_weight":0.7}'
 
 # 응답 예시:
 # {"imageUrl":"https://n8n.firejune.io/ai-images/retro_hisat_2026-...","filename":"retro_hisat_2026-...","preset":"retro_hisat","prompt":"...","seed":12345}
