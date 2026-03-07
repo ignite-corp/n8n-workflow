@@ -114,6 +114,9 @@ done
 
 echo "워크플로우 import 완료!"
 
+# Webhook responseMode DB 패치 (n8n import이 options 안에 넣는 버그 대응)
+python3 "$SCRIPT_DIR/scripts/fix-webhook-response-mode.py"
+
 # ─── 3단계: 활성화할 워크플로우 active=true 설정 ───────────────────────
 echo ""
 echo "워크플로우 활성화 설정 중... (Slack 알림 + Deploy)"

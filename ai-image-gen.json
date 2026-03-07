@@ -7,7 +7,7 @@
                 "httpMethod": "POST",
                 "path": "ai-image-generate",
                 "options": {
-                    "responseMode": "responseNode"
+                    "responseMode": "lastNode"
                 }
             },
             "id": "ai-image-webhook",
@@ -76,23 +76,6 @@
             "typeVersion": 2,
             "position": [
                 1360,
-                300
-            ]
-        },
-        {
-            "parameters": {
-                "respondWith": "json",
-                "responseBody": "={{ JSON.stringify({ imageUrl: $json.imageUrl, filename: $json.filename, preset: $json.preset, prompt: $json.prompt, seed: $json.seed }) }}",
-                "options": {
-                    "responseCode": 200
-                }
-            },
-            "id": "ai-image-respond",
-            "name": "Webhook 응답",
-            "type": "n8n-nodes-base.respondToWebhook",
-            "typeVersion": 1.1,
-            "position": [
-                1600,
                 300
             ]
         },
@@ -167,17 +150,6 @@
                 [
                     {
                         "node": "폴링 & 이미지 저장",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "폴링 & 이미지 저장": {
-            "main": [
-                [
-                    {
-                        "node": "Webhook 응답",
                         "type": "main",
                         "index": 0
                     }
