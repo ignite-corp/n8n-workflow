@@ -6,8 +6,7 @@
             "parameters": {
                 "httpMethod": "POST",
                 "path": "ai-image-generate",
-                "responseMode": "lastNode",
-                "responseData": "firstEntryJson",
+                "responseMode": "responseNode",
                 "options": {}
             },
             "id": "ai-image-webhook",
@@ -38,11 +37,41 @@
                 "jsCode": "__AI_IMAGE_WOL_HEALTH_CODE__"
             },
             "id": "wol-health",
-            "name": "WoL + 헬스체크",
+            "name": "헬스체크",
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
             "position": [
                 680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": ""
+                    },
+                    "conditions": [
+                        {
+                            "id": "pc-online-check",
+                            "leftValue": "={{ $json.pcOnline }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                }
+            },
+            "id": "if-pc-online",
+            "name": "PC 상태 분기",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                920,
                 300
             ]
         },
@@ -57,26 +86,106 @@
                     "timeout": 10000
                 }
             },
-            "id": "comfyui-queue",
-            "name": "ComfyUI 큐잉",
+            "id": "comfyui-queue-sync",
+            "name": "ComfyUI 큐잉 (동기)",
             "type": "n8n-nodes-base.httpRequest",
             "typeVersion": 4.2,
             "position": [
-                1120,
-                300
+                1200,
+                200
             ]
         },
         {
             "parameters": {
                 "jsCode": "__AI_IMAGE_POLL_CODE__"
             },
-            "id": "ai-image-poll",
-            "name": "폴링 & 이미지 저장",
+            "id": "ai-image-poll-sync",
+            "name": "폴링 & 저장 (동기)",
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
             "position": [
-                1360,
-                300
+                1440,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify($json) }}",
+                "options": {
+                    "responseCode": 200
+                }
+            },
+            "id": "respond-200",
+            "name": "Respond 200",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.1,
+            "position": [
+                1680,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify({ status: 'accepted', message: 'PC 기동 중 — 완료 시 callback_url로 결과 전송', callback_url: $json.callback_url || null, warning: $json.callback_url ? undefined : 'callback_url 미제공 — 결과는 이미지 서버에서 확인' }) }}",
+                "options": {
+                    "responseCode": 202
+                }
+            },
+            "id": "respond-202",
+            "name": "Respond 202",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.1,
+            "position": [
+                1200,
+                500
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "__AI_IMAGE_WOL_WAKE_CODE__"
+            },
+            "id": "wol-wake",
+            "name": "WoL Wake",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1440,
+                500
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $('프리셋 변환').first().json.comfyBase + '/prompt' }}",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ prompt: $('프리셋 변환').first().json.comfyPrompt }) }}",
+                "options": {
+                    "timeout": 10000
+                }
+            },
+            "id": "comfyui-queue-async",
+            "name": "ComfyUI 큐잉 (비동기)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1680,
+                500
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "__AI_IMAGE_POLL_CODE__"
+            },
+            "id": "ai-image-poll-async",
+            "name": "폴링 & 저장 (비동기)",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1920,
+                500
             ]
         },
         {
@@ -93,7 +202,7 @@
             "typeVersion": 2,
             "position": [
                 200,
-                600
+                700
             ],
             "webhookId": "ai-image"
         },
@@ -107,7 +216,7 @@
             "typeVersion": 2,
             "position": [
                 440,
-                600
+                700
             ]
         }
     ],
@@ -127,29 +236,91 @@
             "main": [
                 [
                     {
-                        "node": "WoL + 헬스체크",
+                        "node": "헬스체크",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "WoL + 헬스체크": {
+        "헬스체크": {
             "main": [
                 [
                     {
-                        "node": "ComfyUI 큐잉",
+                        "node": "PC 상태 분기",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "ComfyUI 큐잉": {
+        "PC 상태 분기": {
             "main": [
                 [
                     {
-                        "node": "폴링 & 이미지 저장",
+                        "node": "ComfyUI 큐잉 (동기)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Respond 202",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "ComfyUI 큐잉 (동기)": {
+            "main": [
+                [
+                    {
+                        "node": "폴링 & 저장 (동기)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "폴링 & 저장 (동기)": {
+            "main": [
+                [
+                    {
+                        "node": "Respond 200",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Respond 202": {
+            "main": [
+                [
+                    {
+                        "node": "WoL Wake",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "WoL Wake": {
+            "main": [
+                [
+                    {
+                        "node": "ComfyUI 큐잉 (비동기)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "ComfyUI 큐잉 (비동기)": {
+            "main": [
+                [
+                    {
+                        "node": "폴링 & 저장 (비동기)",
                         "type": "main",
                         "index": 0
                     }

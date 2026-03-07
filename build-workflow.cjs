@@ -58,6 +58,7 @@ const codeFiles = {
   __AI_IMAGE_POLL_CODE__: fs.readFileSync(path.join(nodesDir, 'ai-image-poll.js'), 'utf8'),
   __AI_IMAGE_SERVE_CODE__: fs.readFileSync(path.join(nodesDir, 'ai-image-serve.js'), 'utf8'),
   __AI_IMAGE_WOL_HEALTH_CODE__: fs.readFileSync(path.join(nodesDir, 'ai-image-wol-health.js'), 'utf8'),
+  __AI_IMAGE_WOL_WAKE_CODE__: fs.readFileSync(path.join(nodesDir, 'ai-image-wol-wake.js'), 'utf8'),
 }
 
 // ─── MR Description 생성 ───────────────────────────────────────────

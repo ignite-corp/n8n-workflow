@@ -92,16 +92,16 @@ echo "워크플로우 import 완료!"
 # Webhook responseMode DB 패치 (n8n import이 options 안에 넣는 버그 대응)
 python3 "$SCRIPT_DIR/scripts/fix-webhook-response-mode.py"
 
-# ─── 3단계: 활성화할 워크플로우 active=true 설정 ───────────────────────
+# ─── 3단계: 워크플로우 publish (active + published version 생성) ──────
 echo ""
-echo "워크플로우 활성화 설정 중..."
+echo "워크플로우 활성화 중..."
 for WF_NAME in "workflow-resolved.json" "deploy-resolved.json" "ai-image-resolved.json"; do
   WF_FILE="$N8N_DATA/$WF_NAME"
   if [ -f "$WF_FILE" ]; then
     WF_ID=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$WF_FILE','utf8')).id)")
     WF_LABEL=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$WF_FILE','utf8')).name)")
     echo "  → ID $WF_ID ($WF_LABEL)"
-    sqlite3 "$DB_FILE" "UPDATE workflow_entity SET active=1 WHERE id='$WF_ID';" 2>/dev/null || true
+    $N8N publish:workflow --id="$WF_ID" 2>/dev/null || $N8N update:workflow --id="$WF_ID" --active=true 2>/dev/null || true
   fi
 done
 
