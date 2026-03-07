@@ -12,11 +12,13 @@ POST /webhook/ai-image-generate
   → ComfyUI 큐잉 (POST /prompt)
   → 폴링 & 저장 (GET /history → GET /view → 로컬 저장)
   → 콜백 전송 (선택)
-  → webhook 응답: { imageUrl, filename, preset, seed ... }
+  → Respond to Webhook: 200 { imageUrl, filename, preset, prompt, seed }
 
 GET /ai-images/:filename
   → 로컬 이미지 바이너리 응답
 ```
+
+> 동기식 응답 — 이미지 생성 완료 후 결과를 HTTP 200으로 반환 (최대 ~70초 대기)
 
 ## Webhook 요청 형식
 
@@ -58,19 +60,16 @@ GET /ai-images/:filename
 ### 기본 — curl
 
 ```bash
-# 이미지 생성 요청 (즉시 202 응답, 백그라운드 생성)
-curl -X POST https://n8n.firejune.io/webhook/ai-image-generate \
+# 이미지 생성 (동기 — 완료까지 대기 후 200 응답)
+curl --max-time 180 -X POST https://n8n.firejune.io/webhook/ai-image-generate \
   -H 'Content-Type: application/json' \
   -d '{"prompt":"a cute anime girl in a cozy cafe, warm lighting","preset":"retro_hisat"}'
 
-# 생성된 이미지 확인
-ls ~/ai-images/
-
-# 이미지 서빙 URL로 접근
-open "https://n8n.firejune.io/ai-images/retro_hisat_2026-03-05T17-31-46-672Z.png"
+# 응답 예시:
+# {"imageUrl":"https://n8n.firejune.io/ai-images/retro_hisat_2026-...","filename":"retro_hisat_2026-...","preset":"retro_hisat","prompt":"...","seed":12345}
 ```
 
-> 생성에 약 **70초** 소요 (Flux dev, 25 steps, RTX 4070 Ti 기준)
+> 생성에 약 **70초** 소요 (Flux dev, 25 steps, RTX 4070 Ti 기준). `--max-time 180` 권장.
 
 ### 콜백 패턴 — 결과 자동 수신
 
@@ -110,7 +109,8 @@ const res = await fetch('https://n8n.firejune.io/webhook/ai-image-generate', {
     callback_url: 'https://my-app.com/hook'  // 선택
   })
 });
-// 즉시 202 응답 → callback_url로 결과 수신
+const data = await res.json();
+console.log(data.imageUrl); // 완료 후 200 응답
 ```
 
 ### Python
@@ -118,12 +118,12 @@ const res = await fetch('https://n8n.firejune.io/webhook/ai-image-generate', {
 ```python
 import requests
 
-requests.post('https://n8n.firejune.io/webhook/ai-image-generate', json={
+res = requests.post('https://n8n.firejune.io/webhook/ai-image-generate', json={
     'prompt': 'traditional korean painting of a mountain',
     'preset': 'kimhongdo',
     'seed': 777
-})
-# ~/ai-images/에 약 10초 후 저장 (kimhongdo는 6 steps라 빠름)
+}, timeout=180)
+print(res.json()['imageUrl'])  # 완료 후 200 응답 (~10초, kimhongdo는 6 steps)
 ```
 
 ### 프리셋 선택 가이드
