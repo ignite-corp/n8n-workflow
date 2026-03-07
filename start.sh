@@ -41,33 +41,8 @@ fi
 echo "워크플로우 빌드 중..."
 node "$SCRIPT_DIR/build-workflow.cjs"
 
-# ─── 1단계: n8n을 한 번 띄워서 DB 마이그레이션 완료 ─────────────────
-echo ""
-echo "n8n DB 초기화 중..."
-$N8N start &
-N8N_PID=$!
-
-MAX_WAIT=60
-WAITED=0
-while [ $WAITED -lt $MAX_WAIT ]; do
-  if curl -s -o /dev/null -w '' "http://localhost:$N8N_PORT/healthz" 2>/dev/null; then
-    break
-  fi
-  sleep 2
-  WAITED=$((WAITED + 2))
-done
-
-if [ $WAITED -ge $MAX_WAIT ]; then
-  echo "오류: n8n이 ${MAX_WAIT}초 내에 시작되지 않았습니다."
-  kill $N8N_PID 2>/dev/null
-  exit 1
-fi
-
-# n8n 중지 (DB 마이그레이션만 완료)
-kill $N8N_PID 2>/dev/null
-wait $N8N_PID 2>/dev/null || true
-sleep 1
-echo "DB 초기화 완료"
+# n8n import:workflow가 자체적으로 DB 마이그레이션을 처리하므로
+# 별도로 n8n을 띄울 필요 없음
 
 # ─── 2단계: 워크플로우 import (변경분만, staticData 보존) ────────────
 echo ""
@@ -119,14 +94,14 @@ python3 "$SCRIPT_DIR/scripts/fix-webhook-response-mode.py"
 
 # ─── 3단계: 활성화할 워크플로우 active=true 설정 ───────────────────────
 echo ""
-echo "워크플로우 활성화 설정 중... (Slack 알림 + Deploy)"
+echo "워크플로우 활성화 설정 중..."
 for WF_NAME in "workflow-resolved.json" "deploy-resolved.json" "ai-image-resolved.json"; do
   WF_FILE="$N8N_DATA/$WF_NAME"
   if [ -f "$WF_FILE" ]; then
     WF_ID=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$WF_FILE','utf8')).id)")
     WF_LABEL=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$WF_FILE','utf8')).name)")
     echo "  → ID $WF_ID ($WF_LABEL)"
-    $N8N update:workflow --id="$WF_ID" --active=true 2>/dev/null || true
+    sqlite3 "$DB_FILE" "UPDATE workflow_entity SET active=1 WHERE id='$WF_ID';" 2>/dev/null || true
   fi
 done
 
