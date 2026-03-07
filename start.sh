@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 N8N_DATA="$SCRIPT_DIR/.n8n"
 ENV_FILE="$SCRIPT_DIR/.env"
