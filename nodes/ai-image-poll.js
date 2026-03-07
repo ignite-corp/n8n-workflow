@@ -79,9 +79,7 @@ const imageUrl = `${comfyBase}/view?filename=${encodeURIComponent(outputFilename
 const imageBuf = await httpGet(imageUrl);
 
 // ─── 3. 로컬 저장 ────────────────────────────────────────
-const assetsDir = ASSETS_DIR.startsWith('~')
-    ? path.join(process.env.HOME || '/tmp', ASSETS_DIR.slice(1))
-    : ASSETS_DIR;
+const assetsDir = ASSETS_DIR;
 
 fs.mkdirSync(assetsDir, { recursive: true });
 

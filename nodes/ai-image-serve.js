@@ -7,9 +7,7 @@ const path = require('path');
 
 const ASSETS_DIR = 'AI_IMAGES_DIR_HERE';
 
-const assetsDir = ASSETS_DIR.startsWith('~')
-    ? path.join(process.env.HOME || '/tmp', ASSETS_DIR.slice(1))
-    : ASSETS_DIR;
+const assetsDir = ASSETS_DIR;
 
 // URL path에서 filename 추출
 const reqPath = $input.first().json.params?.filename

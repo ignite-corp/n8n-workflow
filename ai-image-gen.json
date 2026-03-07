@@ -6,9 +6,9 @@
             "parameters": {
                 "httpMethod": "POST",
                 "path": "ai-image-generate",
-                "options": {
-                    "responseMode": "lastNode"
-                }
+                "responseMode": "lastNode",
+                "responseData": "firstEntryJson",
+                "options": {}
             },
             "id": "ai-image-webhook",
             "name": "AI Image Webhook",
